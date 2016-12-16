@@ -8,6 +8,7 @@ import (
 
 	"github.com/coreos/ksched/pkg/util"
 
+	"github.com/coreos/ksched/k8s/k8sclient"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/client/restclient"
@@ -15,10 +16,11 @@ import (
 )
 
 var (
-	address string
-	numPods int
-	image   string
-	ns      string
+	address   string
+	numPods   int
+	image     string
+	ns        string
+	scheduler string
 )
 
 func init() {
@@ -26,6 +28,7 @@ func init() {
 	flag.IntVar(&numPods, "numPods", 1, "Number of pods to create")
 	flag.StringVar(&image, "image", "nginx", "The image for the container in the pod(s)")
 	flag.StringVar(&ns, "ns", "default", "Namespace for the new pod(s)")
+	flag.StringVar(&scheduler, "scheduler", "default-scheduler", "A name of scheduler that should schedule the pod(s)")
 	flag.Parse()
 }
 
@@ -41,6 +44,9 @@ func main() {
 		panic(err.Error())
 	}
 
+	annotations := make(map[string]string)
+	annotations[SchedulerAnnotationKey] = scheduler
+
 	// Generate the specified number of pods
 	util.SeedRNGWithInt(time.Now().UnixNano())
 	for i := 0; i < numPods; i++ {
@@ -51,7 +57,8 @@ func main() {
 				Kind: "Pod",
 			},
 			ObjectMeta: api.ObjectMeta{
-				Name: podName,
+				Name:        podName,
+				Annotations: annotations,
 			},
 			Spec: api.PodSpec{
 				Containers: []api.Container{

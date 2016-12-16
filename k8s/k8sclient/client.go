@@ -16,8 +16,13 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
+const (
+	SchedulerAnnotationKey = "scheduler.alpha.kubernetes.io/name"
+)
+
 type Config struct {
-	Addr string
+	Addr          string
+	SchedulerName string
 }
 
 type Client struct {
@@ -59,6 +64,10 @@ func New(cfg Config, podChanSize int) (*Client, error) {
 	informer.AddEventHandler(framework.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*api.Pod)
+			if pod.Annotations[SchedulerAnnotationKey] != cfg.SchedulerName {
+				return
+			}
+
 			ourPod := &k8stype.Pod{
 				ID: makePodID(pod.Namespace, pod.Name),
 			}

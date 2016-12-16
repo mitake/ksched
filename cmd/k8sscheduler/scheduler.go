@@ -26,6 +26,7 @@ var (
 	nodeBatchTimeout int
 	podChanSize      int
 	fakeMachines     bool
+	schedulerName    string
 )
 
 func init() {
@@ -37,6 +38,7 @@ func init() {
 	// Fake the machine topology, only useful for testing when the API server has no nodes
 	flag.BoolVar(&fakeMachines, "fakeMachines", false, "fake the machine topology if running without a real cluster")
 	flag.IntVar(&numMachines, "nm", 2, "number of machines, only needed if faking the resource topology")
+	flag.StringVar(&schedulerName, "scheduler", "default-scheduler", "a name of this scheduler")
 
 	flag.Parse()
 }
@@ -88,7 +90,7 @@ func New(client *k8sclient.Client, maxTasksPerPu int) *k8scheduler {
 
 func main() {
 	// Initialize the kubernetes client
-	config := k8sclient.Config{Addr: address}
+	config := k8sclient.Config{Addr: address, SchedulerName: schedulerName}
 	client, err := k8sclient.New(config, podChanSize)
 	if err != nil {
 		panic(err)
