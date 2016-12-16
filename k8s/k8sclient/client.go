@@ -141,7 +141,7 @@ func (c *Client) AssignBinding(bindings []*k8stype.Binding) error {
 // Returns a batch of pods or blocks until there is at least on pod creation call back
 // The timeout specifies how long to wait for another pod on the pod channel before returning
 // the batch of pods that need to be scheduled
-func (c *Client) GetPodBatch(timeout time.Duration) []*k8stype.Pod {
+func (c *Client) GetPodBatch(timeout, entireTimeout time.Duration) []*k8stype.Pod {
 	batchedPods := make([]*k8stype.Pod, 0)
 
 	fmt.Printf("Waiting for a pod scheduling request\n")
@@ -155,6 +155,13 @@ func (c *Client) GetPodBatch(timeout time.Duration) []*k8stype.Pod {
 	done := make(chan bool)
 	go func() {
 		<-timer.C
+		done <- true
+	}()
+
+	// Set timer for entire timeout of getting unscheduled pods
+	entireTimer := time.NewTimer(entireTimeout) // never reset like timer
+	go func() {
+		<-entireTimer.C
 		done <- true
 	}()
 

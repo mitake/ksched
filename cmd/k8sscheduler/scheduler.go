@@ -19,19 +19,21 @@ import (
 )
 
 var (
-	numMachines      int
-	address          string
-	maxTasksPerPu    int
-	batchTimeout     int
-	nodeBatchTimeout int
-	podChanSize      int
-	fakeMachines     bool
+	numMachines        int
+	address            string
+	maxTasksPerPu      int
+	batchTimeout       int
+	entireBatchTimeout int
+	nodeBatchTimeout   int
+	podChanSize        int
+	fakeMachines       bool
 )
 
 func init() {
 	flag.StringVar(&address, "addr", "127.0.0.1:8080", "APIServer addr")
 	flag.IntVar(&maxTasksPerPu, "mt", 1000, "maximum number of tasks per machine")
-	flag.IntVar(&batchTimeout, "pbt", 2, "pods batch timeout in seconds")
+	flag.IntVar(&batchTimeout, "pbt", 2000, "pods batch timeout in milliseconds")
+	flag.IntVar(&entireBatchTimeout, "epbt", 2000, "batch timeout in milliseconds for entire process of obtaining unscheduled pods")
 	flag.IntVar(&nodeBatchTimeout, "nbt", 2, "node batch timeout in seconds")
 	flag.IntVar(&podChanSize, "pcs", 5000, "pod channel size in client's pod informer")
 	// Fake the machine topology, only useful for testing when the API server has no nodes
@@ -120,7 +122,7 @@ func (ks *k8scheduler) Run(client *k8sclient.Client) {
 	// Loop: Read pods, Schedule, and Assign Bindings
 	for {
 		// Process batch of new Pod updates
-		newPods := client.GetPodBatch(time.Duration(batchTimeout) * time.Second)
+		newPods := client.GetPodBatch(time.Duration(batchTimeout) * time.Millisecond, time.Duration(entireBatchTimeout) * time.Millisecond)
 
 		// No need to schedule or assign task bindings if no new pods
 		if len(newPods) == 0 {
