@@ -28,10 +28,20 @@ import (
 )
 
 var (
-	FlowlesslyBinary    = "/usr/local/bin/flowlessly/flow_scheduler"
+	flowlesslyBinary    = "flow_scheduler"
+	flowlesslyPath      string
 	FlowlesslyAlgorithm = "successive_shortest_path"
 	Incremental         = true
 )
+
+func init() {
+	path, err := exec.LookPath(flowlesslyBinary)
+	if err != nil {
+		fmt.Printf("Finding the binary of Flowlessly (flow_scheduler) failed: %s\n", err)
+		os.Exit(1)
+	}
+	flowlesslyPath = path
+}
 
 type Solver interface {
 	Solve() flowmanager.TaskMapping
@@ -276,5 +286,5 @@ func (fs *flowlesslySolver) getBinConfig() (string, []string) {
 		args = append(args, "--daemon=false")
 	}
 
-	return FlowlesslyBinary, args
+	return flowlesslyPath, args
 }
